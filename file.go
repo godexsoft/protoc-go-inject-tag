@@ -124,7 +124,9 @@ func writeFile(inputPath string, areas []textArea) (err error) {
 	// inject custom tags from tail of file first to preserve order
 	for i := range areas {
 		area := areas[len(areas)-i-1]
-		logf("inject custom tag %q to expression %q", area.InjectTag, string(contents[area.Start-1:area.End-1]))
+		expr := string(contents[area.Start-1 : area.End-1])
+
+		logf("inject custom tag %q to expression %q", area.InjectTag, expr)
 		contents = injectTag(contents, area)
 	}
 	if err = ioutil.WriteFile(inputPath, contents, 0644); err != nil {

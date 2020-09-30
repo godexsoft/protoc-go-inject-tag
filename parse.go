@@ -71,6 +71,18 @@ func injectTag(contents []byte, area textArea) (injected []byte) {
 	expr = rInject.ReplaceAll(expr, []byte(fmt.Sprintf("`%s`", ti.format())))
 	injected = append(injected, contents[:area.Start-1]...)
 	injected = append(injected, expr...)
+
+	if strings.Contains(area.InjectTag, "rel:has-one") {
+		field := strings.Split(string(expr), " ")[0] + "ID"
+		injected = append(injected, fmt.Sprintf("\n\t// #inject_tag: generated go-pg ID field for 'rel:has-one' \n\t%s %s", field, "int64")...)
+	}
+
 	injected = append(injected, contents[area.End-1:]...)
+
+	return
+}
+
+func injectField(contents []byte, fieldType, fieldName string) (injected []byte) {
+	injected = append(contents, fmt.Sprintf("%s %s", fieldName, fieldType)...)
 	return
 }
