@@ -82,7 +82,3 @@ func injectTag(contents []byte, area textArea) (injected []byte) {
 	return
 }
 
-func injectField(contents []byte, fieldType, fieldName string) (injected []byte) {
-	injected = append(contents, fmt.Sprintf("%s %s", fieldName, fieldType)...)
-	return
-}
