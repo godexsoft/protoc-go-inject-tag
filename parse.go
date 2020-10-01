@@ -6,7 +6,15 @@ import (
 )
 
 func tagFromComment(comment string) (tag string) {
-	match := rComment.FindStringSubmatch(comment)
+	match := rTagComment.FindStringSubmatch(comment)
+	if len(match) == 2 {
+		tag = match[1]
+	}
+	return
+}
+
+func fieldFromComment(comment string) (tag string) {
+	match := rFieldComment.FindStringSubmatch(comment)
 	if len(match) == 2 {
 		tag = match[1]
 	}
@@ -82,3 +90,10 @@ func injectTag(contents []byte, area textArea) (injected []byte) {
 	return
 }
 
+func injectField(contents []byte, area textArea) (injected []byte) {
+	injected = append(injected, contents[:area.Start-1]...)
+	injected = append(injected, fmt.Sprintf("\t// #inject_field: generated go-pg ID primary key\n\t%s\n\n", area.InjectField)...)
+	injected = append(injected, contents[area.End-1:]...)
+
+	return
+}

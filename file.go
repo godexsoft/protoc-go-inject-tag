@@ -12,16 +12,18 @@ import (
 )
 
 var (
-	rComment = regexp.MustCompile(`^//\s*@inject_tag:\s*(.*)$`)
-	rInject  = regexp.MustCompile("`.+`$")
-	rTags    = regexp.MustCompile(`[\w_]+:"[^"]+"`)
+	rTagComment   = regexp.MustCompile(`^//\s*@inject_tag:\s*(.*)$`)
+	rFieldComment = regexp.MustCompile(`^//\s*@inject_field:\s*(.*)$`)
+	rInject       = regexp.MustCompile("`.+`$")
+	rTags         = regexp.MustCompile(`[\w_]+:"[^"]+"`)
 )
 
 type textArea struct {
-	Start      int
-	End        int
-	CurrentTag string
-	InjectTag  string
+	Start       int
+	End         int
+	CurrentTag  string
+	InjectTag   string
+	InjectField string
 }
 
 func parseFile(inputPath string, xxxSkip []string) (areas []textArea, err error) {
@@ -68,6 +70,22 @@ func parseFile(inputPath string, xxxSkip []string) (areas []textArea, err error)
 			}
 		}
 
+		if genDecl.Doc != nil {
+			for _, comment := range genDecl.Doc.List {
+				fld := fieldFromComment(comment.Text)
+				if fld != "" {
+					loc := int(structDecl.Fields.Opening + 2) // just behind the opening curly bracket
+
+					area := textArea{
+						InjectField: fld,
+						Start:       loc,
+						End:         loc,
+					}
+					areas = append(areas, area)
+				}
+			}
+		}
+
 		for _, field := range structDecl.Fields.List {
 			// skip if field has no doc
 			if len(field.Names) > 0 {
@@ -91,6 +109,7 @@ func parseFile(inputPath string, xxxSkip []string) (areas []textArea, err error)
 				if tag == "" {
 					continue
 				}
+
 				currentTag := field.Tag.Value
 				area := textArea{
 					Start:      int(field.Pos()),
@@ -124,10 +143,14 @@ func writeFile(inputPath string, areas []textArea) (err error) {
 	// inject custom tags from tail of file first to preserve order
 	for i := range areas {
 		area := areas[len(areas)-i-1]
-		expr := string(contents[area.Start-1 : area.End-1])
+		if area.InjectField != "" {
+			contents = injectField(contents, area)
+		} else {
+			expr := string(contents[area.Start-1 : area.End-1])
 
-		logf("inject custom tag %q to expression %q", area.InjectTag, expr)
-		contents = injectTag(contents, area)
+			logf("inject custom tag %q to expression %q", area.InjectTag, expr)
+			contents = injectTag(contents, area)
+		}
 	}
 	if err = ioutil.WriteFile(inputPath, contents, 0644); err != nil {
 		return
