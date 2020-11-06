@@ -85,9 +85,9 @@ func injectTag(contents []byte, area textArea) (injected []byte) {
 }
 
 func injectField(contents []byte, area textArea) (injected []byte) {
-	injected = append(injected, contents[:area.Start-1]...)
-	injected = append(injected, fmt.Sprintf("\t// #inject_field: generated field\n\t%s\n\n", area.InjectField)...)
-	injected = append(injected, contents[area.End-1:]...)
+	injected = append(injected, contents[:area.Start]...)
+	injected = append(injected, fmt.Sprintf("\n\t// #inject_field: generated field\n\t%s\n", area.InjectField)...)
+	injected = append(injected, contents[area.End:]...)
 
 	return
 }

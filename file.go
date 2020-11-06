@@ -70,22 +70,6 @@ func parseFile(inputPath string, xxxSkip []string) (areas []textArea, err error)
 			}
 		}
 
-		if genDecl.Doc != nil {
-			for _, comment := range genDecl.Doc.List {
-				fld := fieldFromComment(comment.Text)
-				if fld != "" {
-					loc := int(structDecl.Fields.Opening + 2) // just behind the opening curly bracket
-
-					area := textArea{
-						InjectField: fld,
-						Start:       loc,
-						End:         loc,
-					}
-					areas = append(areas, area)
-				}
-			}
-		}
-
 		for _, field := range structDecl.Fields.List {
 			// skip if field has no doc
 			if len(field.Names) > 0 {
@@ -118,6 +102,22 @@ func parseFile(inputPath string, xxxSkip []string) (areas []textArea, err error)
 					InjectTag:  tag,
 				}
 				areas = append(areas, area)
+			}
+		}
+
+		if genDecl.Doc != nil {
+			for _, comment := range genDecl.Doc.List {
+				fld := fieldFromComment(comment.Text)
+				if fld != "" {
+					loc := int(structDecl.End() - 2) // at the end of the struct
+
+					area := textArea{
+						InjectField: fld,
+						Start:       loc,
+						End:         loc,
+					}
+					areas = append(areas, area)
+				}
 			}
 		}
 	}
